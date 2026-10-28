@@ -200,3 +200,29 @@ pre,code{font:500 .9em ui-monospace,Consolas,monospace;background:var(--tint);pa
   .calc{grid-template-columns:1fr}.fcols{grid-template-columns:1fr}
 }
 @media print{.top,.foot,.ad,.btn,.ranges,.cmd{display:none}.phero,.hero{background:none;color:#000}}
+
+/* ---- v4 additions ---- */
+.loc{margin:14px 0 0;color:var(--hero-dim);font-size:.9rem;line-height:1.5}
+.loc b{color:var(--hero-ink)}.loc a{color:#bfe8d4}
+.loc select{font:inherit;font-size:.85rem;max-width:11rem;padding:3px 6px;border-radius:4px;background:rgba(255,255,255,.1);color:var(--hero-ink);border:1px solid rgba(255,255,255,.3)}
+.loc select option{color:#111}
+.loc .muted{display:block;font-size:.82rem;opacity:.85;margin-top:2px}
+.qchips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.qb{font:500 .875rem var(--text);padding:6px 12px;border-radius:4px;background:transparent;color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.qb:hover{background:var(--paper)}
+.words{margin:6px 0 0;color:var(--ink2);font-size:.9rem;font-style:italic;min-height:1.2em}
+.wide{grid-column:1/-1}
+.urbar{margin:0 0 14px;padding:10px 14px;border:1px solid var(--line);border-radius:4px;text-align:right;font-size:1.05rem}
+.offbar{background:#3a3a3a;color:#fff;padding:9px 20px;text-align:center;font-size:.9rem}
+.offbar[hidden],.urbar[hidden],#insx-sec[hidden],#install[hidden]{display:none}
+#batch{width:100%;max-width:420px;font:inherit;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink)}
+#batchout{margin-top:10px;max-width:520px}
+#mycur .note{margin:8px 0}
+.pocket{display:none}
+@media print{
+  html.pocketing body>*:not(#pocket){display:none!important}
+  html.pocketing .pocket{display:block;width:86mm;margin:10mm;padding:5mm;border:1px dashed #000;color:#000;font:11pt/1.3 Arial,sans-serif}
+  .pocket h2{margin:0 0 2mm;font-size:14pt}.pocket p{margin:0 0 3mm}.pocket p.s{font-size:8pt;margin:3mm 0 0}
+  .pocket table{width:100%;border-collapse:collapse}.pocket td{padding:1mm 0;border-bottom:1px solid #bbb}.pocket td+td{text-align:right}
+}
+.pmeta a{color:#bfe8d4;margin-left:10px;text-decoration:underline}

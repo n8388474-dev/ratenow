@@ -245,7 +245,7 @@ def shell(title, desc, path, body, up="../", lang="en", alts=None, schema=None, 
             f'<link rel="manifest" href="{up}manifest.json">', f'<link rel="icon" href="{up}icon.svg" type="image/svg+xml">',
             f'<link rel="preload" href="{up}fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>',
             f'<link rel="preload" href="{up}fonts/public-sans.woff2" as="font" type="font/woff2" crossorigin>',
-            f'<link rel="stylesheet" href="{up}ratenow.css">',
+            f'<link rel="stylesheet" href="{up}ratenow2.css">',
             f'<meta property="og:title" content="{escape(title)}"><meta property="og:description" content="{escape(desc)}">',
             '<script>try{var t=JSON.parse(localStorage.getItem("rn_theme"));if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>']
     if noindex: head.append('<meta name="robots" content="noindex">')
@@ -269,16 +269,16 @@ def shell(title, desc, path, body, up="../", lang="en", alts=None, schema=None, 
             + (f'<li><a href="{escape(tg)}" rel="noopener">Telegram channel</a></li>' if tg else ""))
     dr = ' dir="rtl"' if lang == "ur" else ""
     return (f'<!doctype html><html lang="{lang}"{dr}><head>{"".join(head)}</head><body>'
-            f'<header class="top"><div class="wrap bar"><a class="brand" href="{up}index.html">{MARK}<span>{escape(NAME)}</span></a>'
+            f'<div id="offline" class="offbar" hidden>You are offline. Showing the last rates saved on this device.</div><header class="top"><div class="wrap bar"><a class="brand" href="{up}index.html">{MARK}<span>{escape(NAME)}</span></a>'
             f'<nav class="nav" aria-label="Main">{navh}</nav>'
             f'<button id="theme" class="icon" aria-label="Switch between light and dark">{ICON_THEME}</button></div></header>'
             f'<main>{body}</main>'
             f'<footer class="foot"><div class="wrap fcols"><div><a class="brand" href="{up}index.html">{MARK}<span>{escape(NAME)}</span></a>'
             f'<p class="note">Daily exchange rates, history and tools for people who send, save and trade across currencies.</p></div>'
             f'<div><h4>Popular rates</h4><ul>{pop}</ul></div><div><h4>Tools</h4><ul>{tools}</ul></div><div><h4>Site</h4><ul>{site}</ul></div>'
-            f'<p class="fine">Rates are mid-market values updated daily, for information only. Banks and exchange shops add their own margin. '
+            f'<p class="fine"><button id="install" class="btn alt" type="button" hidden>Install the app</button></p><p class="fine">Rates are mid-market values updated daily, for information only. Banks and exchange shops add their own margin. '
             f'Nothing here is financial advice. &copy; {datetime.date.today().year} {escape(NAME)}</p></div></footer>'
-            f'<script>window.UP="{up}";</script><script src="{up}ratenow.js" defer></script></body></html>')
+            f'<script>window.UP="{up}";</script><script src="{up}ratenow2.js" defer></script></body></html>')
 
 def wrap(inner, cls="page"): return f'<div class="{cls}"><div class="wrap">{inner}</div></div>'
 
@@ -316,8 +316,8 @@ def main():
 
     if os.path.isdir(OUT): shutil.rmtree(OUT)
     os.makedirs(OUT)
-    shutil.copy(os.path.join(ASSETS, "ratenow.css"), os.path.join(OUT, "ratenow.css"))
-    shutil.copy(os.path.join(ASSETS, "ratenow.js"), os.path.join(OUT, "ratenow.js"))
+    shutil.copy(os.path.join(ASSETS, "ratenow2.css"), os.path.join(OUT, "ratenow2.css"))
+    shutil.copy(os.path.join(ASSETS, "ratenow2.js"), os.path.join(OUT, "ratenow2.js"))
     shutil.copytree(os.path.join(ASSETS, "fonts"), os.path.join(OUT, "fonts"))
     w("guilloche.svg", guilloche())
     w("sw.js", open(os.path.join(ASSETS, "sw.js"), encoding="utf-8").read().replace("%V%", TODAY))
@@ -335,9 +335,13 @@ def main():
     if key: w(f"{key}.txt", key)
 
     rjson = {"date": TODAY, "rates": {c: rates[c] for c in codes}, "names": {c: CUR[c] for c in codes},
-             "metals": sorted(METALS & set(codes)), "defaultRupee": CFG.get("default_rupee", "PKR")}
-    w("data/rates.json", jd(rjson))
+             "metals": sorted(METALS & set(codes)), "defaultRupee": CFG.get("default_rupee", "PKR"),
+             "ts": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")}
     ratestag = f'<script type="application/json" id="rates">{jd(rjson)}</script>'
+    hd = dates_all[-30:]
+    rfull = dict(rjson)
+    rfull["hist"] = {"d": hd, "r": {c: [round(hist[d][c], 8) if c in hist[d] else None for d in hd] for c in codes}}
+    w("data/rates.json", jd(rfull))
     urls = [f"{SITE}/"]
 
     # ---- movers (vs PKR) + log
@@ -393,10 +397,12 @@ def main():
             others2 = [x for x in codes if x not in (a, b) and allowed(x, b)][:8]
             rel1 = "".join(f'<li><a href="../{slug(a,x)}/"><span>{a} to {x}</span><small>{fmt(rates[x]/rates[a])}</small></a></li>' for x in others)
             rel2 = "".join(f'<li><a href="../{slug(x,b)}/"><span>{x} to {b}</span><small>{fmt(rates[b]/rates[x])}</small></a></li>' for x in others2)
-            alts = None; urlnk = ""
+            alts = None; urlnk = ""; urbar = ""
+            swp = f' <a href="../{slug(b,a)}/">Switch to {b} to {a}</a>' if allowed(b, a) else ""
             if "PKR" in (a, b) and not ({a, b} & METALS):
                 urlnk = f'<p><a href="../ur/{slug(a,b)}/" hreflang="ur" lang="ur">اردو میں دیکھیں</a></p>'
                 alts = [("en", f"{slug(a,b)}/"), ("ur", f"ur/{slug(a,b)}/")]
+                urbar = f'<div id="urbar" class="urbar" hidden data-href="../ur/{slug(a,b)}/"></div>'
             tm = ""
             if len(vs) >= 3:
                 tm = (f'<h3>What if you had converted earlier?</h3><p><label>Amount in {a} <input id="tmamt" type="number" value="100" min="0" step="any" style="max-width:130px"></label></p>'
@@ -427,27 +433,32 @@ def main():
             body = f"""<section class="phero"><div class="wrap">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Rates</a><span>/</span><a href="../{hub(a)}/">{a}</a><span>/</span><span>{a} to {b}</span></nav>
 <h1>{h1}</h1><div class="prate"><span class="pnum">{fmt(r)}</span><span class="punit">{b}</span>{badge(p1, " today")}</div>
-<p class="pmeta">1 {a} buys {fmt(r)} {b}. Updated {TODAY}.</p></div></section>
-<div class="page"><div class="wrap cols"><div>
+<p class="pmeta">1 {a} buys {fmt(r)} {b}. Updated {TODAY}.{swp}</p></div></section>
+<div class="page"><div class="wrap cols"><div>{urbar}
 <section class="sec"><h2>Convert {a} to {b}</h2><div class="calc">
 <label class="f">Amount in {a}<input id="amt" type="number" value="1" min="0" step="any"></label>
 <div class="f">Result in {b}<div class="big"><output id="out"></output><span>{b}</span></div></div>
 <label class="f">Bank or exchange margin (%)<input id="fee" type="number" value="0" min="0" max="25" step="0.1"></label>
 <div class="f">After the margin you receive<div class="big"><output id="feeout"></output><span>{b}</span></div></div>
-<p class="note wide">The margin costs you <span id="feecost"></span> {b}. Ask your bank or exchange shop for their margin, then enter it here.</p></div></section>
+<p class="note wide">The margin costs you <span id="feecost"></span> {b}. Ask your bank or exchange shop for their margin, then enter it here.</p>
+<div class="wide qchips" aria-label="Quick amounts"><button class="qb" type="button" data-amt="10">10</button><button class="qb" type="button" data-amt="100">100</button><button class="qb" type="button" data-amt="1000">1,000</button><button class="qb" type="button" data-amt="10000">10,000</button><button class="qb" type="button" id="copybtn">Copy result</button></div>
+<p class="words wide" id="words"></p></div></section>
 {adblock()}
 <section class="sec"><h2>{a} to {b} history</h2><div class="ranges" role="group" aria-label="Chart range">{rng}</div>
 <div class="chartbox" id="chart">{chart(ds, vs)}</div>
 <h3>Statistics</h3>{stats_h}</section>
 {timing}
+<section class="sec" id="insx-sec" hidden><h2>Patterns in the data</h2><ul class="plain" id="insx"></ul><p class="note" id="insn"></p></section>
 <section class="sec"><h2>Tools</h2>{tm}
 <h3>Rate alert</h3><div class="row"><span>Tell me when 1 {a} is</span><select id="aldir" style="width:auto"><option value="above">above</option><option value="below">below</option></select>
 <input id="alt" type="number" step="any" placeholder="{fmt(r)}" style="width:140px" aria-label="Target rate"><button id="albtn" class="btn" type="button">Set alert</button></div>
-<p id="almsg" class="note">Alerts check the rate when this site is open. Add the site to your phone's home screen to open it faster.</p><div id="allist"></div></section>
-<section class="sec"><h2>{a} to {b} conversion table</h2><div class="tblwrap"><table class="tbl"><thead><tr><th>{a}</th><th class="n">{b}</th></tr></thead><tbody>{rows}</tbody></table></div></section>
+<p class="qchips"><span class="note">One-tap alerts:</span><button class="qb" type="button" data-preset="1">1% above today</button><button class="qb" type="button" data-preset="2">2% above today</button><button class="qb" type="button" data-preset="-1">1% below today</button></p>
+<p id="almsg" class="note">Alerts check the rate when this site is open. Add the site to your phone's home screen to open it faster.</p><div id="allist"></div>
+<h3>Convert a list of amounts</h3><p class="note">Paste one amount per line. You can write 2.5k or 1,000.</p><textarea id="batch" rows="4" placeholder="100&#10;2.5k&#10;1,000" aria-label="Amounts to convert, one per line"></textarea><div id="batchout"></div></section>
+<section class="sec"><h2>{a} to {b} conversion table</h2><div class="tblwrap"><table class="tbl" id="ctab"><thead><tr><th>{a}</th><th class="n">{b}</th></tr></thead><tbody>{rows}</tbody></table></div></section>
 <section class="sec"><h2>Common questions</h2><dl class="faq">{faqh}</dl></section>
-</div><aside class="side"><div class="row"><button id="fav" class="btn alt" type="button">Save pair</button><button id="share" class="btn alt" type="button">Share</button></div>
-{affbox()}<h3>More {a} rates</h3><ul class="plain">{rel1}</ul><h3>More rates to {b}</h3><ul class="plain">{rel2}</ul>
+</div><aside class="side"><div class="row"><button id="fav" class="btn alt" type="button">Save pair</button><button id="share" class="btn alt" type="button">Share</button><button id="shareimg" class="btn alt" type="button">Share as image</button><button id="printcard" class="btn alt" type="button">Print pocket card</button></div>
+<div id="mycur"></div>{affbox()}<h3>More {a} rates</h3><ul class="plain">{rel1}</ul><h3>More rates to {b}</h3><ul class="plain">{rel2}</ul>
 <h3>More</h3><p><a href="../{hub(a)}/">All {na} rates</a></p>{urlnk}<p><a href="../widget/">Put this converter on your website</a></p></aside></div></div>
 <script type="application/json" id="pd">{jd(pd)}</script>"""
             w(f"{slug(a,b)}/index.html", S(title, desc, f"{slug(a,b)}/", body, alts=alts, schema=schema))
@@ -618,7 +629,7 @@ document.getElementById("el").href="{SITE}/"+f.toLowerCase()+"-to-"+t.toLowerCas
         _, gv = series("XAU", "PKR")
         brow += (f'<a class="brow" href="gold-rate-in-pakistan/"><span class="bcode">Gold<small>24K, per tola</small></span>'
                  f'<span class="bval">{tola_pkr:,.0f}</span>{badge(day_change(gv)) or "<span></span>"}<span class="spark">{spark(gv)}</span></a>')
-    board = (f'<div class="board" role="region" aria-label="Rates against the rupee today"><div class="board-h"><span>1 unit in Pakistani rupees</span><span>{TODAY}</span></div>{brow}</div>'
+    board = (f'<div class="board" id="board" role="region" aria-label="Rates against your currency today"><div class="board-h"><span id="bh1">1 unit in Pakistani rupees</span><span id="bh2">{TODAY}</span></div><div id="brows">{brow}</div></div>'
              if brow else "")
     ex = "".join(f'<button type="button" class="chip" data-q="{q}">{q}</button>' for q in ["500 usd to pkr", "dirham to rupee", "5k pounds in rupees", "gold"])
     rrows = ""
@@ -628,8 +639,8 @@ document.getElementById("el").href="{SITE}/"+f.toLowerCase()+"-to-"+t.toLowerCas
             _, v_ = series(c, "PKR")
             rrows += (f'<tr><td><a href="{slug(c,"PKR")}/">{c}</a><small>{CUR[c]}</small></td><td class="n">{fmt(rates["PKR"]/rates[c])}</td>'
                       f'<td class="n">{badge(day_change(v_))}</td><td class="n"><span class="spark" style="margin-left:auto">{spark(v_)}</span></td></tr>')
-    rtable = (f'<section class="sec"><h2>Rupee rates today</h2><div class="tblwrap"><table class="tbl"><thead><tr><th>Currency</th><th class="n">1 unit in PKR</th>'
-              f'<th class="n">Today</th><th class="n">30 days</th></tr></thead><tbody>{rrows}</tbody></table></div></section>') if rrows else ""
+    rtable = (f'<section class="sec" id="rtab"><h2 id="rh">Rupee rates today</h2><div class="tblwrap"><table class="tbl"><thead><tr><th>Currency</th><th class="n" id="rcol">1 unit in PKR</th>'
+              f'<th class="n">Today</th><th class="n">30 days</th></tr></thead><tbody id="rtb">{rrows}</tbody></table></div></section>') if rrows else ""
     tools = (f'<section class="sec"><h2>Tools</h2><ul class="tools">'
              '<li><a href="send-money-to-pakistan/"><b>Send money to Pakistan</b><span>See what your family receives after your bank\'s margin.</span></a></li>'
              + ('<li><a href="gold-rate-in-pakistan/"><b>Gold rate</b><span>Per tola, gram and ounce, with a value calculator.</span></a></li>' if has_gold else "")
@@ -640,11 +651,13 @@ document.getElementById("el").href="{SITE}/"+f.toLowerCase()+"-to-"+t.toLowerCas
     body = f"""<section class="hero"><div class="wrap hero-grid"><div>
 <h1>Convert any currency. Type it the way you say it.</h1>
 <p class="lede">Daily rates for {len([c for c in codes if c not in METALS])} currencies and gold, with history, fee calculators and rate alerts.</p>
+<p class="loc" id="loc"></p>
 <div class="cmd"><input id="cmd" type="text" placeholder="500 dollar in rupees" autocomplete="off" aria-label="Type a conversion, for example 500 dollar in rupees"><button id="mic" class="mic" type="button" aria-label="Speak your conversion">{ICON_MIC}</button></div>
 <div id="cmdout" class="cmdout" aria-live="polite"></div><p class="try">Try {ex}</p></div>{board}</div></section>
 <div class="wrap"><section class="conv" aria-label="Currency converter"><label class="f">Amount<input id="bigamt" type="number" value="100" min="0" step="any"></label>
 <label class="f">From<select id="bigfrom"></select></label><button id="bigswap" class="swap" type="button" aria-label="Swap currencies">{ICON_SWAP}</button>
-<label class="f">To<select id="bigto"></select></label><div class="res"><div id="bigout" class="resv"></div><a id="biglink" href="#">Open this pair</a></div></section></div>
+<label class="f">To<select id="bigto"></select></label><div class="res"><div id="bigout" class="resv"></div><p class="words" id="bigwords"></p><a id="biglink" href="#">Open this pair</a></div>
+<div class="qchips" style="grid-column:1/-1"><button class="qb" type="button" data-bamt="10">10</button><button class="qb" type="button" data-bamt="100">100</button><button class="qb" type="button" data-bamt="1000">1,000</button><button class="qb" type="button" data-bamt="10000">10,000</button><button class="qb" type="button" data-bamt="100000">100,000</button><button class="qb" type="button" id="bigcopy">Copy result</button></div></section></div>
 <div class="page" style="padding-top:20px"><div class="wrap"><div id="favs"></div><div id="recent"></div>{rtable}{adblock()}{tools}
 <section class="sec"><h2>All currencies</h2><div class="links">{allc}</div></section></div></div>{ratestag}"""
     sch = {"@context": "https://schema.org", "@type": "WebSite", "name": NAME, "url": SITE + "/"}
