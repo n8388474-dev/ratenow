@@ -342,7 +342,7 @@ def main():
             tm = ""
             if len(vs) >= 3:
                 tm = (f'<h3>Time machine</h3><p>What if you had converted <input id="tmamt" type="number" value="100" min="0" step="any" style="max-width:110px"> {a} '
-                      f'<input id="tm" type="range" min="0" max="{len(vs)-1}" value="{min(7, len(vs)-1)}"> <b id="tmlab"></b> days ago?</p>'
+                      f'<input id="tm" type="range" min="0" max="{len(vs)-1}" value="{min(7, len(vs)-1)}"> <b id="tmlab"></b>?</p>'
                       f'<p id="tmout"></p>')
             if a in METALS:
                 nm = na.split(" (")[0]

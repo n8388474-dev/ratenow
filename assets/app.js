@@ -107,7 +107,7 @@
     if ($('tm') && pd.v && pd.v.length > 2) {
       var tr = function () {
         var n = pd.v.length, k = parseInt($('tm').value, 10), i = n - 1 - k, x = parseFloat($('tmamt').value) || 0;
-        $('tmlab').textContent = k + ' (' + pd.d[i] + ')';
+        $('tmlab').textContent = (k === 0 ? 'today' : k + ' days ago') + ' (' + pd.d[i] + ')';
         var then = x * pd.v[i], now = x * pd.v[n - 1], df = now - then, p = then ? df / then * 100 : 0;
         $('tmout').innerHTML = x + ' ' + pd.a + ' then = <b>' + money(then) + ' ' + pd.b + '</b>, today = <b>' + money(now) + ' ' + pd.b +
           '</b>. Difference: <b class="' + (df >= 0 ? 'up' : 'down') + '">' + (df >= 0 ? '+' : '') + money(df) + ' ' + pd.b + ' (' + p.toFixed(2) + '%)</b>';
