@@ -41,7 +41,7 @@
     var d = x >= 1000 ? 2 : x >= 100 ? 3 : x >= 1 ? 4 : 6;
     return x.toLocaleString(undefined, {maximumFractionDigits: d});
   }
-  function money(x) { return x.toLocaleString(undefined, {maximumFractionDigits: x >= 1 ? 2 : 4}); }
+  function money(x) { return x.toLocaleString(undefined, {maximumFractionDigits: Math.abs(x) >= 1 ? 2 : 4}); }
   function on(id, ev, fn) { var e = $(id); if (e) e.addEventListener(ev, fn); }
   function pairSlug(a, b) { return a.toLowerCase() + '-to-' + b.toLowerCase() + '/'; }
 
@@ -89,12 +89,66 @@
     });
   }
 
+
+  // interactive chart
+  function drawChart(box, ds, vs, range, anim) {
+    var n = vs.length, s = (range && range < n) ? n - range : 0, d = ds.slice(s), v = vs.slice(s), m = v.length;
+    if (m < 2 || !box) return;
+    var W = 720, H = 280, L = 6, R = 74, T = 16, B = 30;
+    var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v), pad = (hi - lo) * 0.12 || hi * 0.002;
+    lo -= pad; hi += pad;
+    function X(i) { return L + (W - L - R) * i / (m - 1); }
+    function Y(x) { return T + (H - T - B) * (1 - (x - lo) / (hi - lo)); }
+    var g = '', k, y;
+    for (k = 0; k < 4; k++) {
+      y = Y(lo + (hi - lo) * k / 3).toFixed(1);
+      g += '<line class="cg" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text class="ct" x="' + (W - R + 8) + '" y="' + (+y + 4) + '">' + fmt(lo + (hi - lo) * k / 3) + '</text>';
+    }
+    var p = '', i;
+    for (i = 0; i < m; i++) p += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v[i]).toFixed(1);
+    var area = p + 'L' + X(m - 1).toFixed(1) + ',' + (H - B) + 'L' + X(0).toFixed(1) + ',' + (H - B) + 'Z';
+    var xl = '<text class="ct" x="' + L + '" y="' + (H - 8) + '">' + d[0] + '</text>' +
+      '<text class="ct" text-anchor="end" x="' + (W - R) + '" y="' + (H - 8) + '">' + d[m - 1] + '</text>';
+    box.innerHTML = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Rate history, ' + d[0] + ' to ' + d[m - 1] + '">' + g +
+      '<path class="ca" d="' + area + '"/><path class="cl' + (anim ? ' draw' : '') + '" pathLength="1" d="' + p + '"/>' +
+      '<line class="cx" id="cx" y1="' + T + '" y2="' + (H - B) + '" x1="0" x2="0" style="display:none"/>' +
+      '<circle id="cdot" class="cd" r="5" style="display:none"/>' + xl +
+      '<rect id="chit" x="' + L + '" y="' + T + '" width="' + (W - L - R) + '" height="' + (H - T - B) + '" fill="transparent"/></svg><div class="tip" id="tip"></div>';
+    var svg = box.querySelector('svg'), hit = $('chit'), tip = $('tip'), cx = $('cx'), dot = $('cdot');
+    function move(e) {
+      var r = svg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+      var j = Math.round((px - L) / (W - L - R) * (m - 1)); j = Math.max(0, Math.min(m - 1, j));
+      var x = X(j), yy = Y(v[j]);
+      cx.setAttribute('x1', x); cx.setAttribute('x2', x); cx.style.display = '';
+      dot.setAttribute('cx', x); dot.setAttribute('cy', yy); dot.style.display = '';
+      tip.textContent = d[j] + ':  ' + fmt(v[j]); tip.style.opacity = 1;
+      tip.style.left = Math.max(60, Math.min(r.width - 60, x / W * r.width)) + 'px';
+    }
+    function leave() { cx.style.display = 'none'; dot.style.display = 'none'; tip.style.opacity = 0; }
+    hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move); hit.addEventListener('pointerleave', leave);
+  }
+
   // pair page
   var pdEl = $('pd'), pd = pdEl ? JSON.parse(pdEl.textContent) : null;
   if (pd) {
     var amt = $('amt'), out = $('out');
     function run() { if (amt && out) out.textContent = money((parseFloat(amt.value) || 0) * pd.r); }
     on('amt', 'input', run); run();
+
+    var cb = $('chart');
+    if (cb && pd.v && pd.v.length > 2) {
+      var rb = Array.prototype.slice.call(document.querySelectorAll('.ranges button')), nn = pd.v.length, cur = nn >= 30 ? 30 : nn;
+      rb.forEach(function (b) {
+        var rg = parseInt(b.getAttribute('data-range'), 10);
+        if (rg > nn) { b.style.display = 'none'; return; }
+        b.setAttribute('aria-pressed', rg === cur ? 'true' : 'false');
+        b.addEventListener('click', function () {
+          rb.forEach(function (o) { o.setAttribute('aria-pressed', 'false'); });
+          b.setAttribute('aria-pressed', 'true'); drawChart(cb, pd.d, pd.v, rg, false);
+        });
+      });
+      drawChart(cb, pd.d, pd.v, cur, true);
+    }
     var key = pd.a + '-' + pd.b;
 
     if ($('fee')) {
@@ -116,7 +170,7 @@
     }
     // favourites
     var favs = ls('rn_favs', []);
-    function favBtn() { if ($('fav')) $('fav').textContent = (favs.indexOf(key) >= 0 ? '★ Saved' : '☆ Save pair'); }
+    function favBtn() { if ($('fav')) $('fav').textContent = (favs.indexOf(key) >= 0 ? 'Saved' : 'Save pair'); }
     on('fav', 'click', function () {
       var i = favs.indexOf(key); if (i >= 0) favs.splice(i, 1); else favs.push(key); ss('rn_favs', favs); favBtn();
     }); favBtn();
@@ -195,12 +249,12 @@
 
       function list(id, title, arr) {
         var el = $(id); if (!el || !arr.length) return;
-        var h = '<div class="box"><h2>' + title + '</h2><div class="grid">';
+        var h = '<section class="sec"><h2>' + title + '</h2><ul class="plain">', c = 0;
         arr.forEach(function (k) {
-          var p = k.split('-'); if (!R.rates[p[0]] || !R.rates[p[1]]) return;
-          h += '<a href="' + UP + pairSlug(p[0], p[1]) + '">' + p[0] + ' to ' + p[1] + ': ' + fmt(conv(R, p[0], p[1], 1)) + '</a>';
+          var p = k.split('-'); if (!R.rates[p[0]] || !R.rates[p[1]]) return; c++;
+          h += '<li><a href="' + UP + pairSlug(p[0], p[1]) + '"><span>' + p[0] + ' to ' + p[1] + '</span><span>' + fmt(conv(R, p[0], p[1], 1)) + '</span></a></li>';
         });
-        el.innerHTML = h + '</div></div>';
+        if (c) el.innerHTML = h + '</ul></section>';
       }
       list('favs', '★ My saved pairs', ls('rn_favs', []));
       list('recent', 'Recently viewed', ls('rn_recent', []).slice(0, 6));
