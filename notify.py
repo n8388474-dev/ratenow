@@ -3,7 +3,8 @@ import os, json, urllib.request, urllib.parse
 tok = os.environ.get("TELEGRAM_BOT_TOKEN")
 chat = os.environ.get("TELEGRAM_CHAT_ID")
 if not tok or not chat:
-    raise SystemExit("telegram secrets not set - skipping")
+    print("telegram secrets not set - skipping")
+    raise SystemExit(0)
 text = json.load(open("data/summary.json", encoding="utf-8"))["text"]
 data = urllib.parse.urlencode({"chat_id": chat, "text": text}).encode()
 try:

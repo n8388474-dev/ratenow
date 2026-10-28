@@ -4,7 +4,8 @@ cfg = json.load(open("config.json", encoding="utf-8"))
 site = cfg["site_url"].rstrip("/")
 key = cfg.get("indexnow_key", "")
 if not key:
-    raise SystemExit("no indexnow key")
+    print("no indexnow key - skipping")
+    raise SystemExit(0)
 urls = [u.strip() for u in open("data/urls.txt", encoding="utf-8") if u.strip()]
 host = site.split("//", 1)[1].split("/")[0]
 for i in range(0, len(urls), 9000):
