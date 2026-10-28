@@ -332,6 +332,7 @@ def main():
                   {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]}))
     w("robots.txt", f"User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n")
     if CFG.get("custom_domain"): w("CNAME", CFG["custom_domain"])
+    for gv in CFG.get("google_verify", []): w(gv, f"google-site-verification: {gv}")
     pub = CFG.get("adsense_client", "").replace("ca-", "")
     if pub: w("ads.txt", f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n")
     key = CFG.get("indexnow_key", "")

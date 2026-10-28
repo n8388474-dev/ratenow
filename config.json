@@ -10,5 +10,8 @@
   "affiliate_text": "Send money abroad with low fees",
   "telegram_channel_url": "",
   "indexnow_key": "b7e4c9a1d2f84e6a9c3b5d7f1a2e4c68",
-  "custom_domain": ""
+  "custom_domain": "",
+  "google_verify": [
+    "google0b42174db33144a5.html"
+  ]
 }
