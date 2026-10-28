@@ -18,3 +18,10 @@
 
 ## Roz khud kya hota hai
 Naye rates, history, charts, insights, 1900+ pages, sitemap, RSS, API, Bing/IndexNow ping aur Telegram post. Tumhein kuch nahi karna.
+
+## Apna domain lagana (ratebrook.com)
+1. Domain khareedo (Cloudflare ya Namecheap, ~$10/saal)
+2. `config.json`: `"custom_domain": "ratebrook.com"`, `"site_url": "https://ratebrook.com"`, `"site_name": "RateBrook"`
+3. Domain DNS mein 4 A records (185.199.108.153, .109.153, .110.153, .111.153) aur `www` CNAME -> n8388474-dev.github.io
+4. Repo Settings > Pages > Custom domain mein domain likho, "Enforce HTTPS" on
+5. AdSense milne par `adsense_client` bharo, `ads.txt` khud ban jati hai

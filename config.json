@@ -1,7 +1,7 @@
 {
   "site_url": "https://n8388474-dev.github.io/ratenow",
   "site_name": "RateNow",
-  "contact_email": "",
+  "contact_email": "n8388474@gmail.com",
   "default_rupee": "PKR",
   "adsense_client": "",
   "adsense_slot": "",
@@ -9,5 +9,6 @@
   "affiliate_url": "",
   "affiliate_text": "Send money abroad with low fees",
   "telegram_channel_url": "",
-  "indexnow_key": "b7e4c9a1d2f84e6a9c3b5d7f1a2e4c68"
+  "indexnow_key": "b7e4c9a1d2f84e6a9c3b5d7f1a2e4c68",
+  "custom_domain": ""
 }

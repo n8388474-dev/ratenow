@@ -366,7 +366,7 @@
       g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 2;
       for (var k = 0; k < 24; k++) { g.beginPath(); for (var x = 0; x <= 1200; x += 20) { var y = 300 + (k - 12) * 18 + 40 * Math.sin(x / 90 + k * .16); x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
       var fam = 'Bricolage Grotesque, Georgia, serif';
-      g.fillStyle = '#e8c76a'; g.font = '600 30px ' + fam; g.fillText('RateNow', 70, 90);
+      g.fillStyle = '#e8c76a'; g.font = '600 30px ' + fam; g.fillText(location.host, 70, 90);
       g.fillStyle = '#bfe8d4'; g.font = '400 30px Public Sans, Arial, sans-serif'; g.fillText(pd.a + ' to ' + pd.b + '  ·  ' + (document.querySelector('.pmeta') ? '' : ''), 70, 210);
       g.fillStyle = '#fff'; g.font = '700 96px ' + fam; g.fillText('1 ' + pd.a + ' = ' + fmt(pd.r), 70, 330);
       g.font = '600 56px ' + fam; g.fillText(pd.b, 70, 405);

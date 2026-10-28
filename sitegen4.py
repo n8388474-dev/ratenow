@@ -331,6 +331,9 @@ def main():
         "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
                   {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]}))
     w("robots.txt", f"User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n")
+    if CFG.get("custom_domain"): w("CNAME", CFG["custom_domain"])
+    pub = CFG.get("adsense_client", "").replace("ca-", "")
+    if pub: w("ads.txt", f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n")
     key = CFG.get("indexnow_key", "")
     if key: w(f"{key}.txt", key)
 
@@ -484,8 +487,8 @@ def main():
 <script type="application/json" id="pd">{jd({"a": a, "b": b, "r": r})}</script>"""
             title = f"{x:,} {a} to {b}: {x:,} {na} in {nb} Today"
             desc = f"{x:,} {a} = {money(x*r)} {b} today. Convert {x:,} {na} to {nb} at the latest exchange rate."
-            w(f"{x}-{slug(a,b)}/index.html", S(title, desc, f"{x}-{slug(a,b)}/", body))
-            urls.append(f"{SITE}/{x}-{slug(a,b)}/"); ac += 1
+            w(f"{x}-{slug(a,b)}/index.html", S(title, desc, f"{x}-{slug(a,b)}/", body, noindex=True))
+            ac += 1  # noindex + not in sitemap until the site has authority
 
     # ---- Urdu pages (PKR pairs)
     uc = 0
